@@ -5,10 +5,10 @@ This repository contains a set of utilities for evaluating and performing advers
 ## **Features**
 
 - **[CLEVER Scores Calculation](https://openreview.net/pdf?id=BkUHlMZ0b)**: Assess the robustness of a model by calculating CLEVER scores.  
-  A higher CLEVER score indicates better network robustness, as the smallest hostile disturbance may have a larger Lp norm. The value range depends on the radius size, which is 0-5 by default, and can be modified in the function `utils/compute_untargeted_clever()`.
+  A higher CLEVER score indicates better network robustness, as the smallest hostile disturbance may have a larger Lp norm. The value range depends on the radius size, which is 0 - 5 by default, and can be modified in the function `utils/compute_untargeted_clever()`.
 
 - **Privacy Assessment**: Evaluate model privacy using [SHAPr leakage metrics](https://arxiv.org/abs/2112.02230).  
-  A higher final SHAPr score for a training sample means it is more vulnerable to privacy attacks. The values range from 0 to 1.
+  A higher final SHAPr score for a training sample means it is more vulnerable to privacy attacks. The values range from 0 - 1.
 
 - **Data Poisoning**: Perform data poisoning attacks to evaluate model resilience against adversarial examples.  
   The [Hidden Trigger Backdoor Attack Sleeper Agent](https://arxiv.org/pdf/2106.08970) is used for this. The default `class_source` is 0 (source class), and `class_target` is 1 (target class for misclassification). These values can be modified in `toolbox.py/class_source` and `toolbox.py/class_target`.
