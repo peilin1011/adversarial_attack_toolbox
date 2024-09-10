@@ -18,14 +18,13 @@ from torch.utils.data import DataLoader
 from art.attacks.evasion import FastGradientMethod
 from art.estimators.classification import PyTorchClassifier
 
-
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
-from utils import*
+from utils import *
 from mydata import *
 
 def calculate_sclever_scores(nb_classes):   
-    # 创建 CLEVER 分数计算器实例 (假设 CleverScoreCalculator 已经定义)
+    # Create CLEVER score calculator instance (assuming CleverScoreCalculator is already defined)
     clever_calculator = CleverScoreCalculator(
         model=model,
         input_shape=input_shape,
@@ -33,14 +32,14 @@ def calculate_sclever_scores(nb_classes):
         device_type='cpu'
     )
 
-    # 计算 CLEVER 分数
+    # Calculate CLEVER scores
     scores = []
-    for i in range(10):  # 示例中使用前10张测试图片
+    for i in range(10):  # Use the first 10 test images as an example
         image = x_test[i].numpy()
         clever_untargeted = clever_calculator.compute_untargeted_clever(image)
         scores.append(clever_untargeted)
     
-    # 计算平均分数
+    # Calculate the average score
     clever_untargeted = sum(scores) / len(scores)
         
     print('-----------FINAL RESULT-----------')
@@ -58,19 +57,19 @@ def calculate_SHAPr(nb_classes):
     print("Average SHAPr leakage: ", np.average(SHAPr_leakage))
 
 def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train, y_test, min_, max_):
-    # 将数据集转换为 NumPy 数组
+    # Convert dataset to NumPy arrays
     x_train = x_train.numpy().astype(np.float32)
     x_test = x_test.numpy().astype(np.float32)
 
-    y_train = to_one_hot(y_train, nb_classes)  # 转换为 one-hot 编码
+    y_train = to_one_hot(y_train, nb_classes)  # Convert to one-hot encoding
     y_test = to_one_hot(y_test, nb_classes)
 
-    min_, max_ = min_.numpy(), max_.numpy()  # 将 Tensor 转换为 NumPy
+    min_, max_ = min_.numpy(), max_.numpy()  # Convert Tensor to NumPy
 
-    # 直接计算 mean 和 std，无需调整格式
+    # Directly calculate mean and std without adjusting format
     mean, std = np.mean(x_train), np.std(x_train)
 
-    # 创建优化器
+    # Create optimizer
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4, nesterov=True)
     loss_fn = nn.CrossEntropyLoss()
     model_art = PyTorchClassifier(model,
@@ -79,7 +78,7 @@ def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train,
                                   optimizer=optimizer, 
                                   nb_classes=nb_classes, 
                                   clip_values=(min_, max_), 
-                                  preprocessing=(mean,std)
+                                  preprocessing=(mean, std)
                                   )
 
     
@@ -87,7 +86,7 @@ def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train,
     img = Image.open(trigger_path)
     patch = resize(asarray(img), (patch_size, patch_size, 3))
     patch = np.transpose(patch, (2, 0, 1))
-    # patch 换成单通道
+    # Change patch to single channel
     patch = np.mean(patch, axis=0, keepdims=True)
 
     class_source = 0
@@ -100,8 +99,8 @@ def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train,
         model_art,
         percent_poison=0.50,
         max_trials=1,
-        max_epochs=1,  # 这里的 max_epochs 设置为 50
-        learning_rate_schedule=(np.array([1e-1, 1e-2]), [25, 40]),  # 修改学习率调度的变化点，以符合 max_epochs
+        max_epochs=1,  # Set max_epochs to 1 here
+        learning_rate_schedule=(np.array([1e-1, 1e-2]), [25, 40]),  # Modify learning rate schedule to match max_epochs
         epsilon=16/255,
         batch_size=500, 
         verbose=1,
@@ -118,21 +117,12 @@ def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train,
         device_name=str(device)
     )
 
-
-    # generate poison data
+    # Generate poison data
     x_poison, y_poison = attack.poison(x_trigger, y_trigger, x_train, y_train, x_test, y_test)
 
     save_poisoned_data(x_poison, y_poison, class_source, class_target)
 
-    # get posion data index
-    # indices_poison = attack.get_poison_indices()
-    '''
-    ############# replaced ###############
-    x_poison = np.load('x_poison_source_0_target_1.npy')
-    y_poison = np.load('y_poison_source_0_target_1.npy')
-    ######################################
-    '''
-    # 计算攻击效果
+    # Compute attack effectiveness
     if test:
         clever_calculator_poisoned = CleverScoreCalculator(
             model=model,
@@ -143,48 +133,38 @@ def posion(nb_classes, test, trigger_path, patch_size, x_train, x_test, y_train,
         )
 
         clever_calculator_poisoned.fit(x_poison, y_poison, 
-                                                  batch_size=128, 
-                                                  nb_epochs=1, #set for 150
-                                                  verbose=1)
-
+                                       batch_size=128, 
+                                       nb_epochs=1,  # Set to 1 for testing
+                                       verbose=1)
 
         index_source_test = np.where(y_test.argmax(axis=1) == class_source)[0]
         x_test_trigger = x_test[index_source_test]
-        x_test_trigger = add_trigger_patch(x_test_trigger,trigger_path, patch_size, "random")
+        x_test_trigger = add_trigger_patch(x_test_trigger, trigger_path, patch_size, "random")
         result_poisoned_test = clever_calculator_poisoned.predict(x_test_trigger)
-        # print(len(result_poisoned_test))
 
         success_test = (np.argmax(result_poisoned_test, axis=1) ==
-                        1).sum()/result_poisoned_test.shape[0]
+                        1).sum() / result_poisoned_test.shape[0]
         print("Test Success Rate:", success_test)
 
 def explain(nb_classes, num_channels):
-    # 定义转换
-    ######## just for test   ########
+    # Define transformation
+    ######## Just for testing ########
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         torchvision.transforms.Grayscale(num_output_channels=1),  # 转换为灰度图像
-         #transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+         torchvision.transforms.Grayscale(num_output_channels=1),  # Convert to grayscale image
          ToRGBTransform()
          ])
     ################################
     
-    # above for deployment
-    #transform = get_transform_for_channels(num_channels)
-
-
-    # 加载图片文件夹
+    # Load image folder
     dataset = datasets.ImageFolder(root='images_upload', transform=transform)
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-    
 
     # Create an instance of ‘CleverScoreCalculator’
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4, nesterov=True)
 
-
     # Generate explanations using LIME
     for i, (images, labels) in enumerate(dataloader):
-            # Create an instance of ‘CleverScoreCalculator’
         print(images.shape)
         input_shape = images.shape
         clever_calculator = CleverScoreCalculator(
@@ -199,63 +179,57 @@ def explain(nb_classes, num_channels):
         sample = np.transpose(images, (1, 2, 0))  # Convert to (height, width, channels) format
         explanation = clever_calculator.explain_with_lime(sample)
 
-        # Display the explanation results
+        # Display explanation results
         temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
         img_boundry2 = mark_boundaries(temp, mask)
-        #plt.imshow(img_boundry2)
-        #plt.show()
 
-        # 找到数据的最小值和最大值
+        # Find the min and max values of the data
         min_val = np.min(img_boundry2)
         max_val = np.max(img_boundry2)
 
-        # 将数据归一化到 0-1 范围
+        # Normalize the data to the 0-1 range
         img_boundry2_normalized = (img_boundry2 - min_val) / (max_val - min_val)
 
-
         # Save the image to a file
-        output_filename = f'explained_imags/explanation_{i}.png'  # File name for the saved image
+        output_filename = f'explained_images/explanation_{i}.png'  # File name for the saved image
         plt.imsave(output_filename, img_boundry2_normalized)
         print(f'Saved image: {output_filename}')
         
 if __name__ == '__main__':
-    # 读取 YAML 配置文件
+    # Read the YAML configuration file
     yaml_loader = yaml.YAML(typ='safe', pure=True)
     with open('config.yaml', 'r') as file:
         config = yaml_loader.load(file)
     load_path = config['model_path']
     trigger_path = config['trigger_path']
     
-
-
-
     # Define an ArgumentParser instance
     parser = argparse.ArgumentParser(
         prog='get_clever_scores',
         description='Calculate CLEVER scores',
     )
     
-    parser.add_argument('-d', '--dataset', required=True, help='Dataset to import(mnist, cifar10, mydata)')
+    parser.add_argument('-d', '--dataset', required=True, help='Dataset to import (mnist, cifar10, mydata)')
     parser.add_argument('-t', '--task_need', required=True, type=str, help='Task to perform: robustness, privacy, or poison')
     parser.add_argument('-c', '--nb_classes', required=True, type=int, help='Number of classes')
-    parser.add_argument('-s', '--patch_size', type=int, help=' Patch size for poison data, just for task Data Poisoning')
+    parser.add_argument('-s', '--patch_size', type=int, help='Patch size for poison data, just for task Data Poisoning')
     parser.add_argument('-test', '--check_attack_effect', action='store_true', help='Check attack effect, just for task Data Poisoning')
-    parser.add_argument('-ch', '--num_channels', type=int, help='Channels Number of upload images, just for task Model Explanation') 
+    parser.add_argument('-ch', '--num_channels', type=int, help='Number of channels in uploaded images, just for task Model Explanation') 
     
     args = parser.parse_args()
 
-    # 加载数据集
+    # Load dataset
     if args.dataset == 'mnist':
         x_train, y_train, x_test, y_test, min_value, max_value = load_mnist_dataset()
     elif args.dataset == 'cifar10':
         x_train, y_train, x_test, y_test, min_value, max_value = load_cifar10_dataset()
     elif args.dataset == 'mydata':
         x_train, y_train, x_test, y_test, min_value, max_value = load_mydata()
-    ## define input_shape
+    # Define input_shape
     input_shape = tuple(x_train[0].shape)
     
-    # 加载模型
-    model = Net()  # 你需要定义 Net 类
+    # Load model
+    model = Net()  # You need to define the Net class
     # model.load_state_dict(torch.load(load_path))
     model.eval()
     
@@ -264,12 +238,7 @@ if __name__ == '__main__':
         calculate_sclever_scores(args.nb_classes)
     elif args.task_need == 'privacy':
         calculate_SHAPr(args.nb_classes)
-    elif args.task_need == 'posion':
-        # Ensure that the required variables are defined
-        posion(args.nb_classes, args.check_attack_effect, trigger_path, args.patch_size, x_train, x_test,y_train, y_test, min_value, max_value)
+    elif args.task_need == 'poison':
+        posion(args.nb_classes, args.check_attack_effect, trigger_path, args.patch_size, x_train, x_test, y_train, y_test, min_value, max_value)
     elif args.task_need == 'explain':
         explain(args.nb_classes, args.num_channels)
-    
-
-
-

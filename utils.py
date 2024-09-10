@@ -33,12 +33,11 @@ from lime import lime_image
 # from skimage.segmentation import mark_boundaries
 
 
-
 class CleverScoreCalculator(PyTorchClassifier):
     def __init__(
         self,
         model: torch.nn.Module,
-        nb_classes: int,  # 这里应该是一个整数
+        nb_classes: int,  # This should be an integer
         input_shape: Tuple[int, ...],
         loss: nn.Module = nn.CrossEntropyLoss(), 
         optimizer: torch.optim.Optimizer = None,
@@ -53,27 +52,27 @@ class CleverScoreCalculator(PyTorchClassifier):
         preprocessing: tuple = (0.0, 1.0),
     ):
         """
-        CleverScoreCalculator 初始化，继承 PyTorchClassifier 并添加 CLEVER 分数计算功能。
+        CleverScoreCalculator initialization, inheriting PyTorchClassifier and adding CLEVER score calculation functionality.
 
-        :param model: PyTorch 模型实例。
-        :param loss: 损失函数。
-        :param input_shape: 输入数据的形状。
-        :param nb_classes: 分类的类别数量。
-        :param optimizer: 优化器实例。
-        :param use_amp: 是否使用自动混合精度训练。
-        :param opt_level: 混合精度的优化级别。
-        :param loss_scale: 混合精度训练时的损失缩放。
-        :param channels_first: 是否将通道放在第一个维度。
-        :param clip_values: 输入数据的剪切值范围。
-        :param preprocessing_defences: 数据预处理防御方法。
-        :param postprocessing_defences: 数据后处理防御方法。
-        :param preprocessing: 预处理数据时使用的减法项和除法项。
-        :param device_type: 运行模型的设备类型，可以是 'cpu' 或 'gpu'。
+        :param model: Instance of the PyTorch model.
+        :param loss: Loss function.
+        :param input_shape: Shape of the input data.
+        :param nb_classes: Number of classification categories.
+        :param optimizer: Optimizer instance.
+        :param use_amp: Whether to use automatic mixed precision training.
+        :param opt_level: Optimization level for mixed precision.
+        :param loss_scale: Loss scaling for mixed precision training.
+        :param channels_first: Whether to place channels as the first dimension.
+        :param clip_values: Input data clipping value range.
+        :param preprocessing_defences: Preprocessing defense methods.
+        :param postprocessing_defences: Postprocessing defense methods.
+        :param preprocessing: Subtraction and division terms used when preprocessing data.
+        :param device_type: Device type to run the model on, can be 'cpu' or 'gpu'.
         """
-        # 调用父类 PyTorchClassifier 的初始化方法
+        # Call the parent class PyTorchClassifier's initialization method
         super().__init__(
             model=model,
-            nb_classes=nb_classes,  # 在这里传递正确的类别数量
+            nb_classes=nb_classes,  # Pass the correct number of categories here
             input_shape=input_shape,
             loss=loss,
             optimizer=optimizer,
@@ -86,15 +85,8 @@ class CleverScoreCalculator(PyTorchClassifier):
             preprocessing_defences=preprocessing_defences,
             postprocessing_defences=postprocessing_defences,
             preprocessing=preprocessing,
-            
         )
-
-        # 设置设备类型
-        #self.device_type = device_type
-        #self._device = torch.device("cuda" if torch.cuda.is_available() and device_type == 'gpu' else "cpu")
-        #self.model = model.to(self._device)  # 将模型移动到指定设备
         
-
     def compute_untargeted_clever(self, x_sample, nb_batches=50, batch_size=10, radius=5, norm=1):
         """Compute the untargeted CLEVER score."""
         clever_untargeted = metrics.clever_u(self, x_sample, nb_batches, batch_size, radius, norm)
@@ -134,20 +126,7 @@ class CleverScoreCalculator(PyTorchClassifier):
         :param images: Input image data in the format (batch_size, height, width, channels).
         :return: Model's prediction output.
         """
-        '''
-        self.model.eval()
-
-        batch = torch.stack(tuple(i for i in images), dim=0)
-
-        # Put data on the GPU
-        batch = batch.to(self._device)
-        # Calculate classification result
-        logits = self.model(batch)
-        probs = F.softmax(logits, dim=1)
-        return probs.detach().cpu().numpy()
-        '''
         images = torch.tensor(images).float().to(self._device)
-
         images = images.permute(0, 3, 1, 2)
         with torch.no_grad():
             outputs = self.model(images)
@@ -178,18 +157,16 @@ class CleverScoreCalculator(PyTorchClassifier):
         return explanation
 
 def load_mnist_dataset():
-    # 定义数据集转换（数据标准化等）
+    # Define dataset transformations (data normalization, etc.)
     transform = transforms.Compose([
         transforms.ToTensor(),
-        #transforms.Normalize((0.1307,), (0.3081,))  # 标准化
-        
     ])
 
-    # 加载 CIFAR-10 训练集和测试集
+    # Load CIFAR-10 training and testing sets
     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    # 提取整个训练集和测试集
+    # Extract the entire training and test sets
     x_train, y_train = torch.utils.data.default_collate(trainset)
     x_test, y_test = torch.utils.data.default_collate(testset)
 
@@ -200,16 +177,14 @@ def load_mnist_dataset():
 
 def load_cifar10_dataset():
     transform = transforms.Compose(
-        [transforms.ToTensor(),
-         #transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-         ])
+        [transforms.ToTensor()]
+    )
 
-
-    # 加载 CIFAR-10 训练集和测试集
+    # Load CIFAR-10 training and testing sets
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-    # 提取整个训练集和测试集
+    # Extract the entire training and test sets
     x_train, y_train = torch.utils.data.default_collate(trainset)
     x_test, y_test = torch.utils.data.default_collate(testset)
 
@@ -218,11 +193,11 @@ def load_cifar10_dataset():
 
     return x_train, y_train, x_test, y_test, min_value, max_value
 
-# for task posion
+# For task poisoning
 def select_trigger_train(x_train, y_train, K, class_source, class_target):
     x_train_ = np.copy(x_train)
     
-    # 在一维标签数组中直接找到匹配 class_source 和 class_target 的索引
+    # Directly find the indices that match class_source and class_target in the one-dimensional label array
     index_source = np.where(y_train == class_source)[0][:K]
     index_target = np.where(y_train == class_target)[0]
     
@@ -233,11 +208,11 @@ def select_trigger_train(x_train, y_train, K, class_source, class_target):
     return x_trigger, y_trigger, index_target
 
 def save_poisoned_data(x_poison, y_poison, class_source, class_target):
-    # 创建文件名，包含目标类别和来源类别
+    # Create file names including target and source class
     file_name_x = f"x_poison_source_{class_source}_target_{class_target}.npy"
     file_name_y = f"y_poison_source_{class_source}_target_{class_target}.npy"
 
-    # 保存数据到本地
+    # Save data locally
     np.save(file_name_x, x_poison)
     np.save(file_name_y, y_poison)
 
@@ -263,25 +238,26 @@ def add_trigger_patch(x_set, trigger_path, patch_size, patch_type="fixed"):
 
 def to_one_hot(y, nb_classes):
     return np.eye(nb_classes)[y.numpy()] 
-# for LIME explain
+
+# For LIME explain
 class ToRGBTransform:
     def __call__(self, img):
-        # 将灰度图像转换为伪 RGB 格式
-        img_rgb = img.repeat(3, 1, 1)  # 复制单通道到三个通道
+        # Convert grayscale image to pseudo RGB format
+        img_rgb = img.repeat(3, 1, 1)  # Copy the single channel to three channels
         return img_rgb
 
 def get_transform_for_channels(num_channels):
     if num_channels == 1:
-        # 对单通道图像（例如灰度图像）应用 ToRGBTransform
+        # Apply ToRGBTransform for single-channel images (e.g., grayscale)
         return transforms.Compose([
             transforms.ToTensor(),
             ToRGBTransform()
         ])
     else:
-        # 对 RGB 图像应用常规变换
+        # Apply regular transformations for RGB images
         return transforms.Compose([
             transforms.ToTensor()
-            # 根据需要添加其他变换
+            # Add other transformations if needed
         ])
     
 if __name__ == "__main__":

@@ -4,13 +4,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
-
 from torch import Tensor
 import matplotlib.pyplot as plt
 import torchvision
 from torchvision import models, transforms
 '''
-# for cifar10
+# for CIFAR-10
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -31,39 +30,39 @@ class Net(nn.Module):
         return x
 '''
 
-#for mnist(orig)
+# for MNIST (original)
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, 1)  # MNIST 是单通道 (灰度图像)，因此输入通道为 1
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)  # MNIST is single-channel (grayscale image), so input channels are 1
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
         self.fc1 = nn.Linear(12 * 12 * 64, 128)
-        self.fc2 = nn.Linear(128, 10)  # MNIST 有 10 个类别
+        self.fc2 = nn.Linear(128, 10)  # MNIST has 10 classes
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
-        x = torch.flatten(x, 1)  # 展平
+        x = torch.flatten(x, 1)  # Flatten
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 '''
 
-#for mnist-3-chanel
+# for MNIST (3-channel)
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, 1)  #输入通道为 3
+        self.conv1 = nn.Conv2d(3, 32, 3, 1)  # Input channels are 3
         self.conv2 = nn.Conv2d(32, 64, 3, 1)
         self.fc1 = nn.Linear(12 * 12 * 64, 128)
-        self.fc2 = nn.Linear(128, 10)  # MNIST 有 10 个类别
+        self.fc2 = nn.Linear(128, 10)  # MNIST has 10 classes
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
-        x = torch.flatten(x, 1)  # 展平
+        x = torch.flatten(x, 1)  # Flatten
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
