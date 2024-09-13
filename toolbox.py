@@ -230,7 +230,7 @@ if __name__ == '__main__':
     
     # Load model
     model = Net()  # You need to define the Net class
-    # model.load_state_dict(torch.load(load_path))
+    model.load_state_dict(torch.load(load_path))
     model.eval()
     
     # Based on the task provided, call the appropriate function
