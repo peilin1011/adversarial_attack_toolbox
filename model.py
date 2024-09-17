@@ -47,25 +47,7 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
-'''
 
-# for MNIST (3-channel)
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, 1)  # Input channels are 3
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
-        self.fc1 = nn.Linear(12 * 12 * 64, 128)
-        self.fc2 = nn.Linear(128, 10)  # MNIST has 10 classes
 
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2)
-        x = torch.flatten(x, 1)  # Flatten
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
-'''
 if __name__ == '__main__':
     pass

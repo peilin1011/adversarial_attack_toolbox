@@ -80,7 +80,7 @@ Replace <nb_classes> with the number of classes in your dataset.
 To generate poisoned data and evaluate the attack effect, execute:
 
 ```bash
-$ python your_script.py -d <dataset> -t posion -c <nb_classes> -s <patch_size> -test
+$ python your_script.py -d <dataset> -t poison -c <nb_classes> -s <patch_size> -test
 ```
 
 If just need posioned data, execute:
@@ -111,7 +111,7 @@ $ python toolbox.py -d cifar10 -t privacy -c 10
 ```
 ### **3. Perform Data Poisoning:**
 ```bash
-$ python toolbox.py -d cifar10 -t posion -c 10 -s 8 -test
+$ python toolbox.py -d cifar10 -t poison -c 10 -s 8 -test
 ```
 ### **4. Explain Model Predictions:**
 ```bash
@@ -120,4 +120,3 @@ $ python toolbox.py -d cifar10 -t explain -c 10 -ch 3
 
 ## **NOTES**
 - For data poisoning, adjust the patch_size, learning rates, and other parameters as needed.
-- For interpreting single-channel images using LIME, ensure that the input network accepts 3 channels.
