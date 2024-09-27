@@ -23,7 +23,7 @@ from lime import lime_image
 
 from model import Net  # Ensure that the Net class is defined in your model.py
 from mydata import load_mydata  # Ensure you have a file named mydata.py containing the load_mydata function
-from utils import load_mnist_dataset, load_cifar10_dataset, select_trigger_train, save_poisoned_data, add_trigger_patch, to_one_hot, ToRGBTransform
+from utils import load_mnist_dataset, load_cifar10_dataset, select_trigger_train, save_poisoned_data, add_trigger_patch, to_one_hot
 
 
 def calculate_sclever_scores(nb_classes, model, x_test, device_type='gpu'):
